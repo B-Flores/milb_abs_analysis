@@ -1,9 +1,16 @@
 if (!requireNamespace('pacman', quietly = TRUE)){
-  install.packages('pacman')
+  install_packages('pacman')
 }
 pacman::p_load_current_gh("billpetti/baseballr")
-pacman::p_load(tidyverse, stringr,lubridate, 
-               purrr, plyr, janitor, keyring)
+pacman::p_load(tidyverse, stringr,lubridate, ggplot2, 
+               purrr, plyr, janitor, keyring, DBI, RMySQL)
+
+con <- dbConnect(RMySQL::MySQL(),
+                 dbname = "data",
+                 host = "localhost",
+                 port = 3306,
+                 user = "root",
+                 password = key_get("DB_PWD"))
 
 importData <- function(season , team){
   
@@ -15,165 +22,65 @@ importData <- function(season , team){
   
   # Upon comparing data from each ballpark, we should not include:
   #   base, replacedPlayer.id, replacedPlayer.link
+  # also cleans column names using janitor package (turns "." into "_") 
   
   pbp <- map_df(game_packs, mlb_pbp) %>%
-    select(-base, -replacedPlayer.id, -replacedPlayer.link)
+    select(-base, -replacedPlayer.id, -replacedPlayer.link) %>%
+    clean_names()
   
   return(pbp)
   
 }
 
+import_and_store <- function(year, home_team){
+  temp <- as_tibble(importData(season = year, team = home_team))
+  
+  dbWriteTable(con, name = "data", value = temp, 
+               row.names = FALSE,
+               append = TRUE)
+}
 
-#field.types argument for initializing database
-#for reproduction, set dbWriteTable function for 
-#append = FALSE and overwrite = TRUE, as well as 
-#field.type = TYPES
+plot_pitches <- function(data){
+  homeplate <- data.frame(x = c(-0.85, 0.85, 0.85, 0, -0.85, -0.85),
+                          z = c(-.5, -.5, -1.25, -2, -1.25, -.5))
+  ggplot()+
+    geom_path(data = homeplate, aes(x=x, y=z)) +
+    geom_rect(aes(xmin = -4,
+                  xmax = 4,
+                  ymin = -2.25,
+                  ymax = 5),
+              alpha = 0.66) +
+    geom_rect(aes(xmin = -2,
+                  xmax = 2,
+                  ymin = 0,
+                  ymax = 4),
+              fill = "white")+
+    geom_rect(aes(xmin = -0.95,
+                  xmax = 0.95,
+                  ymin = 1.5,
+                  ymax = 3.47),
+              color = "black", alpha = 0.4) +
+    coord_equal()+
+    xlim(-2,2) +
+    ylim(0,4) +
+    xlab("feet from home plate")+
+    ylab("feet above the ground")+
+    geom_point(data = data, 
+               aes(x=pitch_data_coordinates_p_x, y=pitch_data_coordinates_p_z,
+                   color = details_type_description, alpha = 0.4))+
+    scale_size(range = c(0.005,2.5))
+  #facet_wrap(~matchup.batSide.code)+
+  #  scale_size(range = c(0.01,3))+
+  #scale_color_manual(values = c('red','blue','green','orange',"purple"))
+}
 
-TYPES <- list(game_pk = "Int(10)", 
-               game_date = "Date",
-               index = "Int(10)", 
-               startTime = "varchar(100)",
-               endTime = "varchar(100)", 
-               isPitch = "Boolean", 
-               type = "varchar(100)",
-               playId = "varchar(100)", 
-               pitchNumber = "Int(10)", 
-               details.description = "varchar(100)", 
-               details.event = "varchar(100)",
-               details.awayScore = "Int(10)", 
-               details.homeScore = "Int(10)",
-               details.isScoringPlay = "Boolean", 
-               details.hasReview = "Boolean",
-               details.code = "varchar(4)", 
-               details.ballColor = "varchar(100)",
-               details.isInPlay = "Boolean", 
-               details.isStrike = "Boolean",
-               details.isBall = "Boolean", 
-               details.call.code = "varchar(100)",
-               details.call.description = "varchar(100)", 
-               count.balls.start = "Int(10)",
-               count.strikes.start = "Int(10)", 
-               count.outs.start = "Int(10)",
-               player.id = "Int(10)", 
-               player.link = "varchar(100)", 
-               pitchData.strikeZoneTop = "double(5,2)", 
-               pitchData.strikeZoneBottom = "double(5,2)",
-               details.fromCatcher = "boolean",
-               pitchData.coordinates.x = "double(10,2)",
-               pitchData.coordinates.y = "double(10,2)",
-               hitData.trajectory = "varchar(100)", 
-               hitData.hardness = "varchar(100)",
-               hitData.location = "Int(10)", 
-               hitData.coordinates.coordX = "double(10,2)",
-               hitData.coordinates.coordY = "double(10,2)",
-               actionPlayId = "varchar(100)",
-               details.eventType = "varchar(100)",
-               details.runnerGoing = "boolean",
-               position.code = "Int(10)", 
-               position.name = "varchar(100)",
-               position.type = "varchar(100)", 
-               position.abbreviation = "varchar(100)",
-               battingOrder = "Int(10)", 
-               atBatIndex = "Int(10)",
-               result.type = "varchar(100)", 
-               result.event = "varchar(100)",
-               result.eventType = "varchar(100)", 
-               result.description = "varchar(100)",
-               result.rbi = "Int(10)", 
-               result.awayScore = "Int(10)",
-               result.homeScore = "Int(10)", 
-               about.atBatIndex = "Int(10)",
-               about.halfInning = "varchar(100)", 
-               about.inning = "Int(10)",
-               about.startTime = "varchar(100)", 
-               about.endTime = "varchar(100)",
-               about.isComplete = "boolean", 
-               about.isScoringPlay = "boolean",
-               about.hasReview = "boolean", 
-               about.hasOut = "boolean",
-               about.captivatingIndex = "Int(10)",
-               count.balls.end = "Int(10)", 
-               count.strikes.end = "Int(10)",
-               count.outs.end = "Int(10)", 
-               matchup.batter.id = "Int(10)",
-               matchup.batter.fullName = "varchar(100)",
-               matchup.batter.link = "varchar(100)", 
-               matchup.batSide.code = "varchar(100)",
-               matchup.batSide.description = "varchar(100)",
-               matchup.pitcher.id = "Int(10)", 
-               matchup.pitcher.fullName = "varchar(100)",
-               matchup.pitcher.link = "varchar(100)", 
-               matchup.pitchHand.code = "varchar(100)",
-               matchup.pitchHand.description = "varchar(100)", 
-               matchup.splits.batter = "varchar(100)",
-               matchup.splits.pitcher = "varchar(100)", 
-               matchup.splits.menOnBase = "varchar(100)",
-               batted.ball.result = "varchar(100)", 
-               home_team = "varchar(100)", 
-               home_level_id = "Int(10)",
-               home_level_name = "varchar(100)", 
-               home_parentOrg_id = "Int(10)",
-               home_parentOrg_name = "varchar(100)", 
-               home_league_id = "Int(10)",
-               home_league_name = "varchar(100)", 
-               away_team = "varchar(100)",
-               away_level_id = "Int(10)", 
-               away_level_name = "varchar(100)",
-               away_parentOrg_id = "Int(10)", 
-               away_parentOrg_name = "varchar(100)",
-               away_league_id = "Int(10)", 
-               away_league_name = "varchar(100)",
-               batting_team = "varchar(100)", 
-               fielding_team = "varchar(100)",
-               last.pitch.of.ab = "boolean", 
-               pfxId = "varchar(100)",
-               details.trailColor = "varchar(100)", 
-               details.type.code = "varchar(100)",
-               details.type.description = "varchar(100)", 
-               pitchData.startSpeed = "double(10,2)",
-               pitchData.endSpeed = "double(10,2)", 
-               pitchData.zone = "Int(10)",
-               pitchData.typeConfidence = "double(10,2)", 
-               pitchData.plateTime = "double(10,2)",
-               pitchData.extension = "double(10,2)", 
-               pitchData.coordinates.aY = "double(10,2)",
-               pitchData.coordinates.aZ = "double(10,2)",
-               pitchData.coordinates.pfxX = "double(10,2)",
-               pitchData.coordinates.pfxZ = "double(10,2)",
-               pitchData.coordinates.pX = "double(10,2)",
-               pitchData.coordinates.pZ = "double(10,2)",
-               pitchData.coordinates.vX0 = "double(10,2)",
-               pitchData.coordinates.vY0 = "double(10,2)",
-               pitchData.coordinates.vZ0 = "double(10,2)",
-               pitchData.coordinates.x0 = "double(10,2)",
-               pitchData.coordinates.y0 = "double(10,2)",
-               pitchData.coordinates.z0 = "double(10,2)",
-               pitchData.coordinates.aX = "double(10,2)",
-               pitchData.breaks.breakAngle = "double(10,2)",
-               pitchData.breaks.breakLength = "double(10,2)",
-               pitchData.breaks.breakY = "Int(10)",
-               pitchData.breaks.spinRate = "Int(10)",
-               pitchData.breaks.spinDirection = "Int(10)",
-               hitData.launchSpeed = "double(10,2)",
-               hitData.launchAngle = "double(10,2)",
-               hitData.totalDistance = "double(10,2)",
-               injuryType = "varchar(100)",
-               umpire.id = "varchar(100)",
-               umpire.link = "varchar(100)",
-               isBaseRunningPlay = "boolean",
-               isSubstitution = "boolean",
-               about.isTopInning = "boolean",
-               matchup.postOnFirst.id = "Int(10)",
-               matchup.postOnFirst.fullName = "varchar(100)",
-               matchup.postOnFirst.link = "varchar(100)",
-               matchup.postOnSecond.id = "Int(10)",
-               matchup.postOnSecond.fullName = "varchar(100)",
-               matchup.postOnSecond.link = "varchar(100)",
-               matchup.postOnThird.id = "Int(10)",
-               matchup.postOnThird.fullName = "varchar(100)",
-               matchup.postOnThird.link = "varchar(100)",
-               pitchData.strikeZoneWidth = "double(10,2)",
-               pitchData.strikeZoneDepth = "double(10,2)"
-)
+
+
+
+
+
+
+
+
 
 
