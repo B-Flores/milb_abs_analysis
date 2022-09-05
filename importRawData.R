@@ -190,27 +190,79 @@ dbcomp <- dbGetQuery(con, query)
 start <- Sys.time()
 #import_and_store(year = 2022, home_team = "Reno Aces")
 import_and_store(year = 2022, home_team = "Sacramento River Cats")
-import_and_store(year = 2022, home_team = "Las Vegas Aviators")
-import_and_store(year = 2022, home_team = "Tacoma Rainiers")
-import_and_store(year = 2022, home_team = "Albuquerque Isotopes")
-import_and_store(year = 2022, home_team = "Round Rock Express")
-import_and_store(year = 2022, home_team = "Oklahoma City Dodgers")
-#import_and_store(year = 2022, home_team = "El Paso Chihuahuas")
-# elPasoGames <- mlb_schedule(season = 2022, level_ids = "11") %>%
-#   filter(teams_home_team_name == "El Paso Chihuahuas") %>%
-#   filter(date < today()) %>%
-#   select(game_pk)
-# 
-# elPasoGames <- as_vector(elPasoGames)
-# 
-# elPaso_pbp <- map_df(elPasoGames, mlb_pbp) 
-#   
-# %>%
-#   select(-base, -replacedPlayer.id, -replacedPlayer.link) %>%
-#   clean_names()
 
-end <- Sys.time()
-duration <- end - start
+#import_and_store(year = 2022, home_team = "Las Vegas Aviators")
+lv <- as_tibble(importData(season = 2022, team = "Las Vegas Aviators"))
+lv <- lv %>% select(-review_details_is_overturned_x, -review_details_in_progress_x,
+                    -review_details_review_type_x, -review_details_challenge_team_id_x,
+                    -review_details_is_overturned_y, -review_details_in_progress_y,
+                    -review_details_review_type_y, -review_details_challenge_team_id_y,
+                    -review_details_is_overturned_y, -review_details_in_progress,
+                    -review_details_review_type, -review_details_challenge_team_id,
+                    -review_details_is_overturned
+                    )
+
+dbWriteTable(con, name = "data", value = lv,
+             row.names = FALSE,
+             append = TRUE)
+
+#Tacoma Rainiers
+#import_and_store(year = 2022, home_team = "Tacoma Rainiers")
+tac <- as_tibble(importData(season = 2022, team = "Tacoma Rainiers"))
+tac <- tac %>% select(-review_details_is_overturned_x, -review_details_in_progress_x,
+                    -review_details_review_type_x, -review_details_challenge_team_id_x,
+                    -review_details_is_overturned_y, -review_details_in_progress_y,
+                    -review_details_review_type_y, -review_details_challenge_team_id_y,
+                    -review_details_is_overturned_y
+)
+
+dbWriteTable(con, name = "data", value = tac,
+             row.names = FALSE,
+             append = TRUE)
+
+#Albuquerque Isotopes
+#import_and_store(year = 2022, home_team = "Albuquerque Isotopes")
+alb <- as_tibble(importData(season = 2022, team = "Albuquerque Isotopes"))
+dbWriteTable(con, name = "data", value = alb,
+             row.names = FALSE,
+             append = TRUE)
+
+#Round Rock Express
+#import_and_store(year = 2022, home_team = "Round Rock Express")
+rr <- as_tibble(importData(season = 2022, team = "Round Rock Express"))
+rr <- rr %>% select(-review_details_is_overturned_x, -review_details_in_progress_x,
+                    -review_details_review_type_x, -review_details_challenge_team_id_x,
+                    -review_details_is_overturned_y, -review_details_in_progress_y,
+                    -review_details_review_type_y, -review_details_challenge_team_id_y,
+                    -review_details_is_overturned_y, -review_details_in_progress,
+                    -review_details_review_type, -review_details_challenge_team_id,
+                    -review_details_is_overturned
+)
+dbWriteTable(con, name = "data", value = rr,
+             row.names = FALSE,
+             append = TRUE)
+
+
+#Oklahoma City Dodgers
+#import_and_store(year = 2022, home_team = "Oklahoma City Dodgers")
+okc <- as_tibble(importData(season = 2022, team = "Oklahoma City Dodgers"))
+dbWriteTable(con, name = "data", value = okc,
+             row.names = FALSE,
+             append = TRUE)
+
+
+#El Paso Chihuahuas
+#ep <- as_tibble(importData(season = 2022, team = "El Paso Chihuahuas"))
+#Cannot import data for Chihuahuas:
+#2022-09-04 19:49:14: Invalid arguments provided
+#Error in .f(.x[[i]], ...) : object 'pbp' not found
+
+#most likely cause by purrr::map within importData function, further testing  
+#needed to diagnose error
+
+
+
+
  
 
 dbDisconnect(con)

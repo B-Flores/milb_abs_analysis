@@ -1,5 +1,5 @@
 if (!requireNamespace('pacman', quietly = TRUE)){
-  install_packages('pacman')
+  install_ackages('pacman')
 }
 pacman::p_load_current_gh("billpetti/baseballr")
 pacman::p_load(tidyverse, stringr,lubridate, ggplot2, 
