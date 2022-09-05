@@ -13,9 +13,9 @@ ORDER BY game_date
 before <- dbGetQuery(con, before_abs)
 plot_pitches(before)
 before_outliers <- before %>% 
-  filter(pitch_data_coordinates_p_x > 0.95 | pitch_data_coordinates_p_x < -0.95 | 
-           pitch_data_coordinates_p_z > 3.47 | pitch_data_coordinates_p_z < 1.5)
-
+  filter(pitch_data_coordinates_p_x > 0.97 | pitch_data_coordinates_p_x < -0.97 | 
+           pitch_data_coordinates_p_z > 3.5 | pitch_data_coordinates_p_z < 1.5)
+plot_pitches(before_outliers)
 
 
 after_abs <- "
@@ -26,13 +26,13 @@ AND details_description = 'Called Strike'
 ORDER BY game_date
 ;"
 
-
 after <- dbGetQuery(con, after_abs)
 plot_pitches(after)
-after_outliers <- after %>% 
-  filter(pitch_data_coordinates_p_x > 0.95 | pitch_data_coordinates_p_x < -0.95 | 
-           pitch_data_coordinates_p_z > 3.47 | pitch_data_coordinates_p_z < 1.5)
 
+after_outliers <- after %>% 
+  filter(pitch_data_coordinates_p_x > 0.97 | pitch_data_coordinates_p_x < -0.97 | 
+           pitch_data_coordinates_p_z > 3.5 | pitch_data_coordinates_p_z < 1.5)
+plot_pitches(after_outliers)
 
 
 

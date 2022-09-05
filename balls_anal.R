@@ -21,9 +21,14 @@ balls <- dbGetQuery(con, balls_query) %>%
   clean_names() 
 
 swing_percent <- balls %>%
-  mutate(swing_rat = swinging_strike / (ball + swinging_strike)) %>%
-  filter(swing_rat > 0.1125, swing_rat < 0.2) %>%
-  select(swing_rat) 
+  mutate(swing_rat = swinging_strike / ball) %>%
+  select(swing_rat)
+
+avg <- mean(swing_percent$swing_rat)
+sd <- sd(swing_percent$swing_rat)
+
+swing_percent <- swing_percent %>% filter(swing_rat < avg + 2 * sd,
+                                          swing_rat > avg - 2 * sd)
 
 swing_percent <- rowid_to_column(swing_percent,"index")
 sp1 <- swing_percent %>% filter(index < 37)
@@ -32,9 +37,10 @@ sp2 <- swing_percent %>% filter(index >= 37)
 plot(x = sp1$index, y = sp1$swing_rat,
      xlab = "Day", ylab = "Swing Percent")
 
-abline(lm(swing_rat ~ index,data=sp1),col='red')
+abline(lm(swing_rat ~ index,data=sp1),col='blue')
 
 plot(x = sp2$index, y = sp2$swing_rat,
      xlab = "Day", ylab = "Swing Percent")
 
-abline(lm(swing_rat ~ index,data=sp2),col='red')
+abline(lm(swing_rat ~ index,data=sp2),col='blue')
+
