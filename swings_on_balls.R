@@ -7,6 +7,7 @@ SELECT *
 FROM data.data
 WHERE details_description = 'Swinging Strike'
 OR details_description = 'Ball'
+OR details_description = 'Foul'
 ;
 "
 balls <- dbGetQuery(con, balls_query) %>%
@@ -21,7 +22,7 @@ balls <- dbGetQuery(con, balls_query) %>%
   clean_names() 
 
 swing_percent <- balls %>%
-  mutate(swing_rat = swinging_strike / ball) %>%
+  mutate(swing_rat = (swinging_strike + foul) / ball) %>%
   select(swing_rat)
 
 avg <- mean(swing_percent$swing_rat)
