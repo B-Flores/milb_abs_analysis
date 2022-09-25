@@ -1,7 +1,21 @@
-source("start_env.R")
+---
+title: "PCL 2022 Swings on Balls Analysis"
+author: "Brandon Flores"
+date: "9/25/2022"
+output: html_document
+---
 
-# percentage of balls swung on over time
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
+```{r, include=FALSE}
+source("start_env.R",local = knitr::knit_global())
+```
+
+First we query our pitch by pitch database to retrieve each pitch that would be considered a ball by the automated balls/strikes system. For our analysis we decide whether a pitch is a ball by using the given data points for the bottom and top of the strikezone for each player as well as using -0.95 and 0.95 for our x-axis as homeplate measures 17" wide, and we also take into account about half the diameter of the baseball. 
+
+```{r}
 balls_query <- "
 SELECT *
 FROM data.data
@@ -22,24 +36,40 @@ balls <- dbGetQuery(con, balls_query) %>%
                              TRUE ~ "strike")) %>%
   filter(is_ball == "ball") %>%
   tabyl(game_date, details_description) %>%
-  clean_names() 
+  clean_names()
 
+```
+
+Next we create a new dataframe to compute the ratio of swings on balls for each day by dividing the sum of swinging strikes, fouls, and balls in play by the total number of balls thrown on the given day. 
+
+
+```{r}
 swing_percent <- balls %>%
   mutate(swing_rat = (swinging_strike + foul + 
                         in_play_no_out + in_play_out_s +
                         in_play_run_s) / ball) %>%
   select(swing_rat)
+```
+We now filter data points outside of our mean +/- 2 standard deviations to control for potential outliers. 
 
+```{r}
 avg <- mean(swing_percent$swing_rat)
 sd <- sd(swing_percent$swing_rat)
 
 swing_percent <- swing_percent %>% filter(swing_rat < avg + 2 * sd,
                                           swing_rat > avg - 2 * sd)
 
+```
+
+The automated balls and strikes system was implemented on May 16, 2022. This is the 37th game of the season, and so we split the dataframe accordingly. 
+```{r}
 swing_percent <- rowid_to_column(swing_percent,"index")
 sp1 <- swing_percent %>% filter(index < 37)
 sp2 <- swing_percent %>% filter(index >= 37)
+```
 
+Finally we create scatter plots for both before and after the automated strikezone is implemented and affix a regression line for each graph. 
+```{r}
 plot(x = sp1$index, y = sp1$swing_rat,
      xlab = "Day", ylab = "Swing Percent")
 
@@ -49,4 +79,6 @@ plot(x = sp2$index, y = sp2$swing_rat,
      xlab = "Day", ylab = "Swing Percent")
 
 abline(lm(swing_rat ~ index,data=sp2),col='blue')
+```
+
 
