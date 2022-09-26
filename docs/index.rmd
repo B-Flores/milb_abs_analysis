@@ -38,6 +38,7 @@ balls <- dbGetQuery(con, balls_query) %>%
   tabyl(game_date, details_description) %>%
   clean_names()
 
+view(balls)
 ```
 
 Next we create a new dataframe to compute the ratio of swings on balls for each day by dividing the sum of swinging strikes, fouls, and balls in play by the total number of balls thrown on the given day. 
