@@ -17,6 +17,8 @@ knitr::opts_chunk$set(echo = TRUE)
 source("start_env.R",local = knitr::knit_global())
 ```
 
+#First
+
 First we query our pitch by pitch database to retrieve each pitch that would be considered a ball by the automated balls/strikes system. For our analysis we decide whether a pitch is a ball by using the given data points for the bottom and top of the strikezone for each player as well as using -0.95 and 0.95 for our x-axis as homeplate measures 17" wide, and we also take into account about half the diameter of the baseball. 
 
 ```{r}
@@ -71,6 +73,8 @@ swing_percent <- rowid_to_column(swing_percent,"index")
 sp1 <- swing_percent %>% filter(index < 37)
 sp2 <- swing_percent %>% filter(index >= 37)
 ```
+
+#Plots
 
 Finally we create scatter plots for both before and after the automated strikezone is implemented and affix a regression line for each graph. 
 ```{r}
