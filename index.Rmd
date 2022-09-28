@@ -2,7 +2,11 @@
 title: "PCL 2022 Swings on Balls Analysis"
 author: "Brandon Flores"
 date: "9/25/2022"
-output: html_document
+output: 
+  html_document:
+    theme: yeti
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
